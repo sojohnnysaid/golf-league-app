@@ -73,15 +73,18 @@
 
 	function advanceToNext() {
 		pendingTens = false;
-		let nextPlayer = currentPlayer + 1;
-		let nextHole = currentHole;
-
-		if (nextPlayer >= PLAYERS_COUNT) {
-			nextPlayer = 0;
-			nextHole = currentHole + 1;
-		}
+		// Go through all holes for current player, then move to next player
+		let nextHole = currentHole + 1;
+		let nextPlayer = currentPlayer;
 
 		if (nextHole >= HOLES) {
+			// Done with this player, move to next player
+			nextHole = 0;
+			nextPlayer = currentPlayer + 1;
+		}
+
+		if (nextPlayer >= PLAYERS_COUNT) {
+			// All done!
 			checkComplete();
 			return;
 		}
@@ -92,16 +95,18 @@
 
 	function goToPrevious() {
 		pendingTens = false;
-		let prevPlayer = currentPlayer - 1;
-		let prevHole = currentHole;
-
-		if (prevPlayer < 0) {
-			prevPlayer = PLAYERS_COUNT - 1;
-			prevHole = currentHole - 1;
-		}
+		// Go back through holes for current player, then previous player
+		let prevHole = currentHole - 1;
+		let prevPlayer = currentPlayer;
 
 		if (prevHole < 0) {
-			return;
+			// Go to previous player's last hole
+			prevHole = HOLES - 1;
+			prevPlayer = currentPlayer - 1;
+		}
+
+		if (prevPlayer < 0) {
+			return; // Already at the beginning
 		}
 
 		currentPlayer = prevPlayer;
@@ -136,7 +141,7 @@
 			</svg>
 		</button>
 		<div class="text-white text-center">
-			<div class="text-xs opacity-75">Hole {currentHole + 1} of {HOLES}</div>
+			<div class="text-xs opacity-75">Player {currentPlayer + 1} of {PLAYERS_COUNT}</div>
 			<div class="text-sm font-bold">{totalScores} / {PLAYERS_COUNT * HOLES}</div>
 		</div>
 		<div class="w-8"></div>
@@ -195,16 +200,16 @@
 			</button>
 		</div>
 
-		<!-- Mini scoreboard for current hole -->
-		<div class="flex gap-1.5 mb-2">
-			{#each scorecards as card, idx}
+		<!-- Mini scoreboard showing all 9 holes for current player -->
+		<div class="flex gap-1 mb-2">
+			{#each currentCard?.scores ?? [] as score, holeIdx}
 				<button
-					onclick={() => jumpTo(idx, currentHole)}
-					class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold transition-all
-						{idx === currentPlayer ? 'ring-2 ring-white scale-105' : 'opacity-60'}
-						{idx < 2 ? 'bg-green-600' : 'bg-blue-600'}"
+					onclick={() => jumpTo(currentPlayer, holeIdx)}
+					class="w-8 h-8 rounded-md flex items-center justify-center text-white text-xs font-bold transition-all
+						{holeIdx === currentHole ? 'ring-2 ring-white scale-105 bg-green-500' : 'opacity-70 bg-gray-700'}
+						{score.strokes ? 'bg-green-600' : ''}"
 				>
-					{card.scores[currentHole]?.strokes ?? '-'}
+					{score.strokes ?? (holeIdx + 1)}
 				</button>
 			{/each}
 		</div>
