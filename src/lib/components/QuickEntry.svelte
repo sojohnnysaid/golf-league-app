@@ -110,8 +110,9 @@
 
 	function checkComplete() {
 		const allFilled = scorecards.every((card) => card.scores.every((s) => s.strokes !== null));
-		if (allFilled && onComplete) {
-			onComplete(scorecards);
+		if (allFilled && onClose) {
+			// Close quick entry and return to scorecard view with submit button
+			onClose();
 		}
 	}
 
