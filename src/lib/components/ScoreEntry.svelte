@@ -159,6 +159,22 @@
 		updateTotals(playerIdx);
 	}
 
+	// Handle mobile "Done" button - fires on blur/change
+	function handleChange(event: Event, playerIdx: number, holeIdx: number) {
+		const input = event.target as HTMLInputElement;
+		const value = input.value;
+
+		if (value !== '') {
+			const num = parseInt(value);
+			if (!isNaN(num) && num > 0 && num <= 20) {
+				scorecards[playerIdx].scores[holeIdx].strokes = num;
+				updateTotals(playerIdx);
+				// Auto-advance after mobile "Done" tap
+				setTimeout(() => advanceToNext(), 50);
+			}
+		}
+	}
+
 	function updateTotals(playerIdx: number) {
 		const card = scorecards[playerIdx];
 		card.totalStrokes = card.scores.reduce((sum, s) => sum + (s.strokes ?? 0), 0);
@@ -255,6 +271,7 @@
 									value={score.strokes ?? ''}
 									onkeydown={(e) => handleKeyDown(e, playerIdx, holeIdx)}
 									oninput={(e) => handleInput(e, playerIdx, holeIdx)}
+									onchange={(e) => handleChange(e, playerIdx, holeIdx)}
 									onfocus={() => handleFocus(playerIdx, holeIdx)}
 									bind:this={inputs[playerIdx][holeIdx]}
 								/>
@@ -302,6 +319,7 @@
 									value={score.strokes ?? ''}
 									onkeydown={(e) => handleKeyDown(e, playerIdx, holeIdx)}
 									oninput={(e) => handleInput(e, playerIdx, holeIdx)}
+									onchange={(e) => handleChange(e, playerIdx, holeIdx)}
 									onfocus={() => handleFocus(playerIdx, holeIdx)}
 									bind:this={inputs[playerIdx][holeIdx]}
 								/>
