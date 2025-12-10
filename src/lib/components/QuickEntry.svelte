@@ -16,9 +16,15 @@
 	let currentPlayer = $state(0);
 	let currentHole = $state(0);
 
+	// Pending input for double-digit scores (when user presses 1 first)
+	let pendingTens = $state(false);
+
 	// Get current scorecard and score
 	let currentCard = $derived(scorecards[currentPlayer]);
 	let currentScore = $derived(currentCard?.scores[currentHole]?.strokes);
+
+	// Display value (shows "1_" when pending)
+	let displayValue = $derived(pendingTens ? '1_' : (currentScore ?? '-'));
 
 	// Calculate progress
 	let totalScores = $derived(
@@ -27,13 +33,34 @@
 	let progressPercent = $derived((totalScores / (PLAYERS_COUNT * HOLES)) * 100);
 
 	function setScore(num: number) {
+		pendingTens = false;
 		scorecards[currentPlayer].scores[currentHole].strokes = num;
 		updateTotals(currentPlayer);
 		// Auto-advance after setting score
 		setTimeout(() => advanceToNext(), 150);
 	}
 
+	function handleNumberPress(num: number) {
+		if (pendingTens) {
+			// Complete the double-digit number: 10-19
+			setScore(10 + num);
+		} else if (num === 1) {
+			// Start pending for potential 10-19
+			pendingTens = true;
+		} else {
+			// Direct single digit 2-9
+			setScore(num);
+		}
+	}
+
+	function handleAce() {
+		// Ace = 1 stroke (hole in one)
+		pendingTens = false;
+		setScore(1);
+	}
+
 	function clearScore() {
+		pendingTens = false;
 		scorecards[currentPlayer].scores[currentHole].strokes = null;
 		updateTotals(currentPlayer);
 	}
@@ -45,6 +72,7 @@
 	}
 
 	function advanceToNext() {
+		pendingTens = false;
 		let nextPlayer = currentPlayer + 1;
 		let nextHole = currentHole;
 
@@ -54,7 +82,6 @@
 		}
 
 		if (nextHole >= HOLES) {
-			// All done!
 			checkComplete();
 			return;
 		}
@@ -64,6 +91,7 @@
 	}
 
 	function goToPrevious() {
+		pendingTens = false;
 		let prevPlayer = currentPlayer - 1;
 		let prevHole = currentHole;
 
@@ -88,13 +116,9 @@
 	}
 
 	function jumpTo(playerIdx: number, holeIdx: number) {
+		pendingTens = false;
 		currentPlayer = playerIdx;
 		currentHole = holeIdx;
-	}
-
-	// Get team color for player
-	function getPlayerColor(playerIdx: number): string {
-		return playerIdx < 2 ? 'bg-green-600' : 'bg-blue-600';
 	}
 
 	function getPlayerTeam(playerIdx: number): string {
@@ -102,19 +126,19 @@
 	}
 </script>
 
-<div class="fixed inset-0 bg-gray-900 flex flex-col z-50">
-	<!-- Header -->
-	<div class="flex items-center justify-between p-4 bg-gray-800">
-		<button onclick={onClose} class="text-white p-2">
+<div class="fixed inset-0 bg-gray-900 flex flex-col z-50 overflow-hidden">
+	<!-- Header - compact -->
+	<div class="flex items-center justify-between px-3 py-2 bg-gray-800">
+		<button onclick={onClose} class="text-white p-1" aria-label="Close">
 			<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
 			</svg>
 		</button>
 		<div class="text-white text-center">
-			<div class="text-sm opacity-75">Hole {currentHole + 1} of {HOLES}</div>
-			<div class="font-bold">{totalScores} / {PLAYERS_COUNT * HOLES}</div>
+			<div class="text-xs opacity-75">Hole {currentHole + 1} of {HOLES}</div>
+			<div class="text-sm font-bold">{totalScores} / {PLAYERS_COUNT * HOLES}</div>
 		</div>
-		<div class="w-10"></div>
+		<div class="w-8"></div>
 	</div>
 
 	<!-- Progress bar -->
@@ -122,61 +146,61 @@
 		<div class="h-full bg-green-500 transition-all duration-300" style="width: {progressPercent}%"></div>
 	</div>
 
-	<!-- Main content area -->
-	<div class="flex-1 flex flex-col items-center justify-center p-4">
-		<!-- Team indicator -->
-		<div class="text-gray-400 text-sm mb-1">{getPlayerTeam(currentPlayer)}</div>
+	<!-- Main content area - compact -->
+	<div class="flex-1 flex flex-col items-center justify-center p-2 min-h-0">
+		<!-- Player info row -->
+		<div class="text-gray-400 text-xs">{getPlayerTeam(currentPlayer)}</div>
+		<div class="text-white text-2xl font-bold">{currentCard?.playerName}</div>
+		<div class="text-gray-400 text-xs mb-2">HC: {currentCard?.handicap}</div>
 
-		<!-- Player name -->
-		<div class="text-white text-4xl font-bold mb-2">{currentCard?.playerName}</div>
-
-		<!-- Handicap -->
-		<div class="text-gray-400 text-sm mb-6">HC: {currentCard?.handicap}</div>
-
-		<!-- Current hole indicator -->
-		<div class="flex items-center gap-4 mb-6">
+		<!-- Hole nav + score display row -->
+		<div class="flex items-center gap-3 mb-2">
 			<button
 				onclick={goToPrevious}
-				class="text-gray-400 hover:text-white p-2 disabled:opacity-30"
+				class="text-gray-400 hover:text-white p-1 disabled:opacity-30"
 				disabled={currentPlayer === 0 && currentHole === 0}
+				aria-label="Previous"
 			>
-				<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
 				</svg>
 			</button>
 
-			<div class="bg-gray-800 rounded-2xl px-8 py-4">
-				<div class="text-gray-400 text-xs text-center mb-1">HOLE</div>
-				<div class="text-white text-5xl font-bold text-center">{currentHole + 1}</div>
+			<div class="bg-gray-800 rounded-xl px-4 py-2 text-center">
+				<div class="text-gray-400 text-[10px]">HOLE</div>
+				<div class="text-white text-3xl font-bold">{currentHole + 1}</div>
+			</div>
+
+			<!-- Score display -->
+			<div class="bg-gray-800 rounded-xl w-20 h-16 flex items-center justify-center">
+				{#if pendingTens}
+					<span class="text-yellow-400 text-3xl font-bold">1_</span>
+				{:else if currentScore}
+					<span class="text-green-400 text-3xl font-bold">{currentScore}</span>
+				{:else}
+					<span class="text-gray-600 text-3xl font-bold">-</span>
+				{/if}
 			</div>
 
 			<button
 				onclick={advanceToNext}
-				class="text-gray-400 hover:text-white p-2 disabled:opacity-30"
+				class="text-gray-400 hover:text-white p-1 disabled:opacity-30"
 				disabled={currentPlayer === PLAYERS_COUNT - 1 && currentHole === HOLES - 1}
+				aria-label="Next"
 			>
-				<svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
 					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
 				</svg>
 			</button>
 		</div>
 
-		<!-- Current score display -->
-		<div class="bg-gray-800 rounded-2xl w-32 h-32 flex items-center justify-center mb-6">
-			{#if currentScore}
-				<span class="text-green-400 text-6xl font-bold">{currentScore}</span>
-			{:else}
-				<span class="text-gray-600 text-6xl font-bold">-</span>
-			{/if}
-		</div>
-
 		<!-- Mini scoreboard for current hole -->
-		<div class="flex gap-2 mb-4">
+		<div class="flex gap-1.5 mb-2">
 			{#each scorecards as card, idx}
 				<button
 					onclick={() => jumpTo(idx, currentHole)}
-					class="w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold transition-all
-						{idx === currentPlayer ? 'ring-2 ring-white scale-110' : 'opacity-60'}
+					class="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold transition-all
+						{idx === currentPlayer ? 'ring-2 ring-white scale-105' : 'opacity-60'}
 						{idx < 2 ? 'bg-green-600' : 'bg-blue-600'}"
 				>
 					{card.scores[currentHole]?.strokes ?? '-'}
@@ -185,13 +209,22 @@
 		</div>
 	</div>
 
-	<!-- Custom Number Pad -->
-	<div class="bg-gray-800 p-4 pb-8">
-		<div class="grid grid-cols-5 gap-2 max-w-md mx-auto">
-			{#each [1, 2, 3, 4, 5] as num}
+	<!-- Custom Number Pad - compact -->
+	<div class="bg-gray-800 p-2 pb-4">
+		<!-- Main number grid: Ace, 2-9, Clear -->
+		<div class="grid grid-cols-5 gap-1.5 max-w-sm mx-auto">
+			<!-- Ace button (hole in one) -->
+			<button
+				onclick={handleAce}
+				class="h-14 rounded-xl bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-700
+					   text-white text-sm font-bold transition-all active:scale-95"
+			>
+				ACE
+			</button>
+			{#each [2, 3, 4, 5] as num}
 				<button
-					onclick={() => setScore(num)}
-					class="aspect-square rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-green-600
+					onclick={() => handleNumberPress(num)}
+					class="h-14 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-green-600
 						   text-white text-2xl font-bold transition-all active:scale-95"
 				>
 					{num}
@@ -199,8 +232,8 @@
 			{/each}
 			{#each [6, 7, 8, 9] as num}
 				<button
-					onclick={() => setScore(num)}
-					class="aspect-square rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-green-600
+					onclick={() => handleNumberPress(num)}
+					class="h-14 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-green-600
 						   text-white text-2xl font-bold transition-all active:scale-95"
 				>
 					{num}
@@ -209,25 +242,31 @@
 			<!-- Clear button -->
 			<button
 				onclick={clearScore}
-				class="aspect-square rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700
-					   text-white text-lg font-bold transition-all active:scale-95 flex items-center justify-center"
+				class="h-14 rounded-xl bg-red-600 hover:bg-red-500 active:bg-red-700
+					   text-white text-xs font-bold transition-all active:scale-95 flex items-center justify-center"
+				aria-label="Clear"
 			>
-				<svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-						  d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z" />
-				</svg>
+				CLR
 			</button>
 		</div>
 
-		<!-- 10+ row -->
-		<div class="grid grid-cols-5 gap-2 max-w-md mx-auto mt-2">
-			{#each [10, 11, 12, 13, 14] as num}
+		<!-- 1X row for double digits -->
+		<div class="grid grid-cols-5 gap-1.5 max-w-sm mx-auto mt-1.5">
+			<button
+				onclick={() => handleNumberPress(1)}
+				class="h-11 rounded-xl {pendingTens ? 'bg-yellow-600' : 'bg-gray-600'} hover:bg-gray-500 active:bg-yellow-600
+					   text-white text-lg font-bold transition-all active:scale-95"
+			>
+				1X
+			</button>
+			{#each [0, 1, 2, 3] as num}
 				<button
-					onclick={() => setScore(num)}
-					class="h-10 rounded-xl bg-gray-700 hover:bg-gray-600 active:bg-green-600
+					onclick={() => pendingTens ? setScore(10 + num) : null}
+					class="h-11 rounded-xl {pendingTens ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-800 opacity-40'}
 						   text-white text-sm font-bold transition-all active:scale-95"
+					disabled={!pendingTens}
 				>
-					{num}
+					{10 + num}
 				</button>
 			{/each}
 		</div>
