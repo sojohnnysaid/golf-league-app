@@ -1,5 +1,6 @@
 <script lang="ts">
 	import ScoreEntry from '$lib/components/ScoreEntry.svelte';
+	import QuickEntry from '$lib/components/QuickEntry.svelte';
 	import type { PlayerScorecard } from '$lib/types';
 
 	// Demo data matching the scorecard image
@@ -41,8 +42,10 @@
 	]);
 
 	let isComplete = $state(false);
+	let showQuickEntry = $state(false);
 
 	function handleComplete(cards: PlayerScorecard[]) {
+		showQuickEntry = false;
 		isComplete = true;
 		console.log('Scores submitted:', cards);
 	}
@@ -58,12 +61,34 @@
 	}
 </script>
 
+<!-- Quick Entry Overlay -->
+{#if showQuickEntry}
+	<QuickEntry
+		bind:scorecards
+		onComplete={handleComplete}
+		onClose={() => (showQuickEntry = false)}
+	/>
+{/if}
+
 <div class="min-h-screen bg-gray-50">
 	<!-- Header -->
 	<header class="bg-green-700 text-white p-4 shadow-md">
-		<div class="max-w-4xl mx-auto">
-			<h1 class="text-2xl font-bold">Golf League Scores</h1>
-			<p class="text-green-200 text-sm">Week 9 - Wednesday Early Playoffs</p>
+		<div class="max-w-4xl mx-auto flex items-center justify-between">
+			<div>
+				<h1 class="text-2xl font-bold">Golf League Scores</h1>
+				<p class="text-green-200 text-sm">Week 9 - Wednesday Early Playoffs</p>
+			</div>
+			{#if !isComplete}
+				<button
+					onclick={() => (showQuickEntry = true)}
+					class="bg-yellow-500 hover:bg-yellow-400 text-gray-900 p-3 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+					title="Quick Entry Mode"
+				>
+					<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+						<path d="M13 3L4 14h7v7l9-11h-7V3z" />
+					</svg>
+				</button>
+			{/if}
 		</div>
 	</header>
 
