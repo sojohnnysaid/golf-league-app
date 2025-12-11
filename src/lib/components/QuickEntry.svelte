@@ -114,9 +114,8 @@
 	}
 
 	function checkComplete() {
-		const allFilled = scorecards.every((card) => card.scores.every((s) => s.strokes !== null));
-		if (allFilled && onClose) {
-			// Close quick entry and return to scorecard view with submit button
+		// We've gone through all players - return to scorecard view
+		if (onClose) {
 			onClose();
 		}
 	}
