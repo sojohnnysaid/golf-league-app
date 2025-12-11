@@ -132,7 +132,7 @@
 	}
 </script>
 
-<div class="fixed inset-0 bg-gray-900 flex flex-col z-50 overflow-hidden">
+<div class="fixed inset-0 bg-gray-900 flex flex-col z-50 overflow-hidden touch-manipulation select-none">
 	<!-- Header - compact -->
 	<div class="flex items-center justify-between px-3 py-2 bg-gray-800">
 		<button onclick={onClose} class="text-white p-1" aria-label="Close">
@@ -216,7 +216,7 @@
 	</div>
 
 	<!-- Custom Number Pad - compact -->
-	<div class="bg-gray-800 p-2 pb-4">
+	<div class="bg-gray-800 p-2 pb-4 touch-manipulation">
 		<!-- Main number grid: Ace, 2-9, Clear -->
 		<div class="grid grid-cols-5 gap-1.5 max-w-sm mx-auto">
 			<!-- Ace button (hole in one) -->
